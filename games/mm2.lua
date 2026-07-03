@@ -15,50 +15,50 @@ local Theme = {
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Fuji1k🐬", Theme)
 
-local Home = Window:NewTab("home")
-local Main = Window:NewTab("main")
-local Player = Window:NewTab("player")
-local Visuals = Window:NewTab("visuals")
-local Farms = Window:NewTab("farms")
+local Home = Window:NewTab("Home")
+local Main = Window:NewTab("Main")
+local Player = Window:NewTab("Player")
+local Visuals = Window:NewTab("Visuals")
+local Farms = Window:NewTab("Farms")
 
 -- Home
 
-local HomeSection1 = Home:NewSection("home")
+local HomeSection1 = Home:NewSection("Home")
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local GameInfo = MarketplaceService:GetProductInfo(game.PlaceId)
 
-local GameInfoButton = HomeSection1:NewButton("game name: " .. GameInfo.Name, "the games name", function()
+local GameInfoButton = HomeSection1:NewButton("Game Name: " .. GameInfo.Name, "The games name.", function()
     toClipboard(gameInfo.Name)
 end)
 
-local PlayersAmountButton = HomeSection1:NewButton("players in server: " .. #game.Players:GetPlayers(), "the amnt of players in game", function()
+local PlayersAmountButton = HomeSection1:NewButton("Players In Server: " .. #game.Players:GetPlayers(), "The amount of players in game.", function()
     toClipboard(#game.Players:GetPlayers())
 end)
 
 game.Players.PlayerAdded:Connect(function()
-	PlayersAmountButton:UpdateButton("players in server: " .. #game.Players:GetPlayers())
+	PlayersAmountButton:UpdateButton("Players In Server: " .. #game.Players:GetPlayers())
 end)
 
 game.Players.PlayerRemoving:Connect(function()
-	PlayersAmountButton:UpdateButton("players in server: " .. #game.Players:GetPlayers())
+	PlayersAmountButton:UpdateButton("Players In Server: " .. #game.Players:GetPlayers())
 end)
 
-HomeSection1:NewButton("placeid: " .. game.PlaceId, "the game's place id", function()
+HomeSection1:NewButton("PlaceId: " .. game.PlaceId, "The game's PlaceId.", function()
     toClipboard(game.PlaceId)
 end)
 
-HomeSection1:NewButton("jobid: " .. game.JobId, "the game's place id", function()
+HomeSection1:NewButton("JobId: " .. game.JobId, "the game's JobId.", function()
     toClipboard(game.JobId)
 end)
 
-HomeSection1:NewKeybind("toggle ui", "key to toggle the gui.", Enum.KeyCode.Semicolon, function()
+HomeSection1:NewKeybind("Toggle UI", "Key to toggle the UI.", Enum.KeyCode.Semicolon, function()
 	Library:ToggleUI()
 end)
 
 -- Main
 
-local MainSection1 = Main:NewSection("main")
+local MainSection1 = Main:NewSection("Main")
 
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
@@ -112,7 +112,7 @@ local function killAllInRange()
 	end
 end
 
-local KillAll = MainSection1:NewButton("kill all (murderer)", "kills everyone in the lobby", function()
+local KillAll = MainSection1:NewButton("Kill All (Murderer)", "Kills everyone in the lobby.", function()
    killAllInRange()
 end)
 
@@ -133,7 +133,7 @@ local function hasGun(player)
     return false
 end
 
-local TPToSheriff = MainSection1:NewButton("teleport to sheriff", "teleports you to the sheriff", function()
+local TPToSheriff = MainSection1:NewButton("Teleport to Sheriff", "Teleports you to the sheriff.", function()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and hasGun(player) then
             local targetChar = player.Character
@@ -165,7 +165,7 @@ local function hasKnife(player)
     return false
 end
 
-local TPToKnife = MainSection1:NewButton("teleport to murderer", "teleports you to the knife holder", function()
+local TPToKnife = MainSection1:NewButton("Teleport to Murderer", "Teleports you to the knife holder.", function()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and hasKnife(player) then
             local targetChar = player.Character
@@ -180,33 +180,66 @@ local TPToKnife = MainSection1:NewButton("teleport to murderer", "teleports you 
     end
 end)
 
-MainSection1:NewToggle("gun teleport", "automatically teleports you to the gun after sheriff dies.", function(state)
-    if state then
-        gunTPEnabled = true
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local gunTPEnabled = false
+
+local function getHRP()
+    local char = player.Character
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getGunDrop()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name == "GunDrop" then
+            return obj
+        end
+    end
+    return nil
+end
+
+local function teleportTo(pos)
+    local hrp = getHRP()
+    if not hrp then return end
+
+    local oldCFrame = hrp.CFrame
+    hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+    task.wait(0.5)
+    hrp.CFrame = oldCFrame
+end
+
+local function startGunTP()
+    gunTPEnabled = true
+
+    task.spawn(function()
         while gunTPEnabled do
-            task.wait(.5)
-            print("searching")
-            -- Find GunDrop anywhere in the workspace
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj.Name == "GunDrop" then
-                    -- Create ESP effect
-                    local position = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.Position = obj.Position
-                    wait(0.5)
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.Position = position
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.Position = game.Players.LocalPlayer.Character.UpperTorso
-                    break
-                end
+            task.wait(0.5)
+
+            local gun = getGunDrop()
+            if gun then
+                teleportTo(gun.Position)
             end
         end
+    end)
+end
+
+local function stopGunTP()
+    gunTPEnabled = false
+end
+
+MainSection1:NewToggle("Gun TP", "Automatically teleports you to the gun after sheriff dies.", function(state)
+    if state then
+        startGunTP()
     else
-        gunTPEnabled = false
+        stopGunTP()
     end
 end)
 
 -- Visuals
 
-local VisualsSection1 = Visuals:NewSection("visuals")
+local VisualsSection1 = Visuals:NewSection("Visuals")
 
 local Players = game:GetService("Players")
 
@@ -263,7 +296,7 @@ local function update()
     end
 end
 
-VisualsSection1:NewToggle("Sheriff ESP", "Highlights players holding Gun", function(state)
+VisualsSection1:NewToggle("Sheriff ESP", "Highlights players holding Gun.", function(state)
     enabled = state
 
     if not enabled then
@@ -330,7 +363,7 @@ local function updateMurderer()
     end
 end
 
-VisualsSection1:NewToggle("Murderer ESP", "Knife holders (red)", function(state)
+VisualsSection1:NewToggle("Murderer ESP", "Knife holders (red).", function(state)
     murdererEnabled = state
 
     if not state then
@@ -351,14 +384,40 @@ end)
 
 -- Players
 
-local PlayersSection1 = Player:NewSection("player")
+local PlayersSection1 = Player:NewSection("Player")
 
-PlayersSection1:NewSlider("walkspeed", "determines your walkspeed", 40, 16, function(s) -- 500 (MaxValue) | 0 (MinValue)
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local wsValue = 16
+local jpValue = 50
+
+local function apply()
+    local char = player.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+
+    hum.WalkSpeed = wsValue
+    hum.JumpPower = jpValue
+end
+
+PlayersSection1:NewSlider("Walkspeed", "Determines your Walkspeed.", 100, 16, function(s)
+    wsValue = s
 end)
 
-PlayersSection1:NewSlider("jumppower", "determines your jumppower", 100, 50, function(s) -- 500 (MaxValue) | 0 (MinValue)
-    game.Players.LocalPlayer.Character.Humanoid.JumpPower = s
+PlayersSection1:NewSlider("JumpPower", "Determines your JumpPower", 500, 50, function(s)
+    jpValue = s
+end)
+
+player.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    apply()
+end)
+
+RunService.Heartbeat:Connect(function()
+    apply()
 end)
 
 local Players = game:GetService("Players")
@@ -394,7 +453,7 @@ local function stopFly()
     hrp.AssemblyAngularVelocity = Vector3.zero
 end
 
-PlayersSection1:NewToggle("fly", "wasd fly thingy", function(state)
+PlayersSection1:NewToggle("Fly", "WASD Fly", function(state)
 
     local char, hrp = getChar()
 
@@ -454,7 +513,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local loop
 
-PlayersSection1:NewToggle("noclip", "walk through walls", function(state)
+PlayersSection1:NewToggle("Noclip", "Walk through walls.", function(state)
 
     local function setCollide(value)
         local char = player.Character
@@ -487,7 +546,7 @@ end)
 
 -- Farms
 
-local FarmsSection1 = Farms:NewSection("farms")
+local FarmsSection1 = Farms:NewSection("Farms")
 
 _G.CoinFarm = _G.CoinFarm or {
     Enabled = false,
@@ -497,7 +556,7 @@ _G.CoinFarm = _G.CoinFarm or {
     Visited = {}
 }
 
-FarmsSection1:NewToggle("coin autofarm", "Autofarms coins.", function(state)
+FarmsSection1:NewToggle("Coin Autofarm", "Autofarms coins.", function(state)
     local Data = _G.CoinFarm
     Data.Enabled = state
 
