@@ -365,6 +365,8 @@ Submit.MouseButton1Click:Connect(function()
 
 		CloseUI()
 
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/fujidagoat/fujihub/refs/heads/main/resources/bootstrapper.lua"))()
+
 	else
 
 		local Original = Submit.BackgroundColor3
