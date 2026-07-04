@@ -237,6 +237,102 @@ MainSection1:NewToggle("Gun TP", "Automatically teleports you to the gun after s
     end
 end)
 
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local lockOn = false
+local enabled = false
+local target = nil
+
+local MAX_DISTANCE = 120
+
+local function getRoot(char)
+	return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function isValid(char)
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	return hum and hum.Health > 0
+end
+
+local function getNearestTarget()
+	local closest
+	local closestDist = math.huge
+
+	local myChar = player.Character
+	local myRoot = getRoot(myChar)
+	if not myRoot then return nil end
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character and isValid(plr.Character) then
+			local root = getRoot(plr.Character)
+			if root then
+				local dist = (root.Position - myRoot.Position).Magnitude
+				if dist < closestDist and dist <= MAX_DISTANCE then
+					if plr.Character:FindFirstChild("Knife") or plr.Backpack:FindFirstChild("Knife") then
+                        closestDist = dist
+					    closest = plr.Character
+                    end
+				end
+			end
+		end
+	end
+
+	return closest
+end
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if not enabled then return end
+
+	if input.KeyCode == Enum.KeyCode.E then
+		lockOn = not lockOn
+		target = nil
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if not lockOn then return end
+
+	if not target or not isValid(target) then
+		target = getNearestTarget()
+	end
+
+	if target then
+		local root = getRoot(target)
+		if root then
+			local camPos = camera.CFrame.Position
+			local lookAt = root.Position + Vector3.new(0, 1.5, 0)
+
+			camera.CFrame = camera.CFrame:Lerp(
+				CFrame.new(camPos, lookAt),
+				0.15
+			)
+		end
+	end
+end)
+
+local AimlockCanBeEnabled = false
+
+local AimlockToggle = MainSection1:NewToggle("Aimlock (Only murderer)", "Enables lock-on system", function(state)
+	AimlockCanBeEnabled = state
+end)
+
+MainSection1:NewKeybind("Aimlock Key", "The keybind to bind aimlock to.", Enum.KeyCode.E, function()
+	if AimlockCanBeEnabled then
+        enabled = not enabled
+
+        if not enabled then
+            lockOn = false
+            target = nil
+        end
+    end
+end)
+
 -- Visuals
 
 local VisualsSection1 = Visuals:NewSection("Visuals")
