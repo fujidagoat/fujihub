@@ -19,7 +19,7 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "CustomNotification"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
-gui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = game.CoreGui
 
 -- Dim background
 local dim = Instance.new("Frame")
